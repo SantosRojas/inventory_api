@@ -44,7 +44,7 @@ router.post('/register', async (req: Request, res: Response): Promise<any> => {
       cellPhone,
       email,
       password: hashed,
-      role_id: roleId || 4, // Por defecto, rol guest
+      role_id: roleId || 5, // Por defecto, rol guest
     });
 
     // Obtener el usuario recién creado

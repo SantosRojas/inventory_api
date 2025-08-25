@@ -17,36 +17,19 @@ export class InventoryRepository {
     this.connection = connection;
   }
 
-  // private async fetchWithJoins(
-  //   condition?: string,
-  //   params: any[] = [],
-  // ): Promise<InventoryToSend[]> {
-  //   const query = `
-  //     SELECT i.id, i.serial_number, i.qr_code, i.inventory_date, i.status, i.last_maintenance_date, i.created_at,
-  //            m.name AS model, ins.name AS institution,
-  //            s.name AS service, u.first_name AS inventory_manager
-  //     FROM inventory i
-  //     JOIN models m ON i.model_id = m.id
-  //     JOIN institutions ins ON i.institution_id = ins.id
-  //     JOIN services s ON i.service_id = s.id
-  //     JOIN users u ON i.inventory_taker_id = u.id
-  //     ${condition ? `WHERE ${condition}` : ""}
-  //   `;
-  //   const [rows] = await this.connection.execute<RowDataPacket[]>(
-  //     query,
-  //     params,
-  //   );
-  //   return snackToCamelArray(rows) as InventoryToSend[];
-  // }
-  //
+
   private async fetchWithJoins(
     condition?: string,
     params: any[] = [],
     orderBy?: string,
-    limit: number = 10,
+    limit?: number, 
   ): Promise<InventoryToSend[]> {
     // Validar que limit sea entero positivo
-    const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : null;
+    let safeLimit: number | undefined;
+
+    if (limit !== undefined && Number.isInteger(limit) && limit > 0 && limit !== Infinity) {
+      safeLimit = limit;
+    }
 
     // Validar que orderBy no permita inyección
     const allowedOrderFields = [
@@ -62,33 +45,38 @@ export class InventoryRepository {
       safeOrderBy = orderBy;
     }
 
-    let query = `
-      SELECT i.id, i.serial_number, i.qr_code, i.inventory_date, i.status, i.last_maintenance_date, i.created_at,
-             m.name AS model, ins.name AS institution,
-             s.name AS service, u.first_name AS inventory_manager
-      FROM inventory i
-      JOIN models m ON i.model_id = m.id
-      JOIN institutions ins ON i.institution_id = ins.id
-      JOIN services s ON i.service_id = s.id
-      JOIN users u ON i.inventory_taker_id = u.id
-      ${condition ? `WHERE ${condition}` : ""}
-      ${orderBy ? `ORDER BY ${orderBy}` : ""}
-      ${limit ? `LIMIT ${safeLimit}` : ""}
-    `;
+    const query = `
+    SELECT i.id, i.serial_number, i.qr_code, i.inventory_date, i.status, 
+           i.last_maintenance_date, i.created_at, i.manufacture_date,
+           m.name AS model, ins.name AS institution,
+           s.name AS service, u.first_name AS inventory_manager
+    FROM inventory i
+    JOIN models m ON i.model_id = m.id
+    JOIN institutions ins ON i.institution_id = ins.id
+    JOIN services s ON i.service_id = s.id
+    LEFT JOIN users u ON i.inventory_taker_id = u.id
+    ${condition ? `WHERE ${condition}` : ""}
+    ${safeOrderBy ? `ORDER BY ${safeOrderBy}` : ""}
+    ${safeLimit !== undefined ? `LIMIT ${safeLimit}` : ""}
+  `;
 
-    const [rows] = await this.connection.execute<RowDataPacket[]>(
-      query,
-      params,
-    );
+    const [rows] = await this.connection.execute<RowDataPacket[]>(query, params);
     return snackToCamelArray(rows) as InventoryToSend[];
   }
 
-  async findLatest(limit: number): Promise<InventoryToSend[]> {
-    return this.fetchWithJoins("1=1", [], "i.inventory_date DESC", limit);
+
+  async findLatestByUser(userId: number, limit: number): Promise<InventoryToSend[]> {
+    return this.fetchWithJoins(
+      "i.inventory_taker_id = ?",           // WHERE
+      [userId],                  // parámetros
+      "i.inventory_date DESC",   // ORDER BY
+      limit                      // LIMIT
+    );
   }
 
+
   async findAll(): Promise<InventoryToSend[]> {
-    return this.fetchWithJoins();
+    return this.fetchWithJoins(undefined, [], undefined, 2);
   }
 
   async getById(id: number): Promise<InventoryToSend | null> {

@@ -68,7 +68,7 @@ export class DashboardRepository {
     return { institutions };
   }
 
-  // Verificar si el usuario es admin
+  // Verificar si el usuario es admin o root
   async isUserAdmin(userId: number): Promise<boolean> {
     const query = `
       SELECT r.name as role_name
@@ -79,7 +79,7 @@ export class DashboardRepository {
     const [rows] = await this.connection.execute<RowDataPacket[]>(query, [
       userId,
     ]);
-    return rows.length > 0 && rows[0].role_name === "admin";
+    return rows.length > 0 && (rows[0].role_name === "admin" || rows[0].role_name === "root");
   }
 
   // Obtener instituciones permitidas para el usuario

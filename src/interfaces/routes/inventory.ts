@@ -20,6 +20,7 @@ const inventorySchema = Joi.object({
   serviceId: Joi.number().required(),
   inventoryTakerId: Joi.number().required(),
   inventoryDate: Joi.string().required(),
+  manufactureDate: Joi.string().optional(),
   status: Joi.string().optional(),
   lastMaintenanceDate: Joi.string().optional(),
   createdAt: Joi.string().required(),
@@ -52,12 +53,20 @@ router.get("/", async (req: Request, res: Response): Promise<any> => {
 
 router.get("/latest", async (req: Request, res: Response) => {
   const limit = req.query.limit ? Number(req.query.limit) : 10;
+  const userId = req.query.userId ? Number(req.query.userId) : undefined;
+
+  if (!userId) {
+    res.status(400).json(
+      errorResponse("ID de usuario faltante", "Se requiere el ID de usuario")
+    );
+    return;
+  }
 
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
     async (service) => {
-      return service.getLatestInventories(limit);
+      return service.getLatestInventoriesByUser(userId, limit);
     },
     res,
   );

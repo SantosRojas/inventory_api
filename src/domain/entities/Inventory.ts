@@ -8,6 +8,7 @@ export interface Inventory {
   serviceId: number;
   inventoryTakerId: number;
   inventoryDate: string | Date;
+  manufactureDate: string | Date;
   status: string; // o enum
   lastMaintenanceDate: string | Date;
   createdAt: Date;
