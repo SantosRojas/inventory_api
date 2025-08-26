@@ -1,36 +1,20 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { DashboardRepository } from "../../infrastructure/repositories/DashboardRepository";
 import { DashboardService } from "../../application/DashboardService";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
-import { isValidPositiveInteger } from "../../utils/validHandler";
-import { errorResponse } from "../../utils/responseHelpers";
 import { AuthenticatedRequest, authMiddleware, TokenPayload } from "./middlewares/authMiddleware";
 
 const router = Router();
 
 // Summary - Resumen general del dashboard
-router.get("/summary/:userId", async (req: Request, res: Response) => {
-  const { userId: userIdParam } = req.params;
-
-  if (!isValidPositiveInteger(userIdParam)) {
-    res
-      .status(400)
-      .json(
-        errorResponse(
-          "ID de usuario inválido",
-          "El ID debe ser un número entero positivo",
-        ),
-      );
-    return;
-  }
-
-  const userId = Number(userIdParam);
+router.get("/summary", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const { id,role} = req.user as Omit<TokenPayload,'email'>
 
   await handleRequestWithService(
     DashboardRepository,
     DashboardService,
     async (service) => {
-      const summary = await service.getSummary(userId);
+      const summary = await service.getSummary(id,role);
       return summary;
     },
     res,
@@ -39,29 +23,17 @@ router.get("/summary/:userId", async (req: Request, res: Response) => {
 
 // Model Distribution - Distribución por modelos (agregado)
 router.get(
-  "/model-distribution/:userId",
-  async (req: Request, res: Response) => {
-    const { userId: userIdParam } = req.params;
+  "/model-distribution",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const {id,role} = req.user as Omit<TokenPayload,'email'>
 
-    if (!isValidPositiveInteger(userIdParam)) {
-      res
-        .status(400)
-        .json(
-          errorResponse(
-            "ID de usuario inválido",
-            "El ID debe ser un número entero positivo",
-          ),
-        );
-      return;
-    }
-
-    const userId = Number(userIdParam);
 
     await handleRequestWithService(
       DashboardRepository,
       DashboardService,
       async (service) => {
-        const modelDistribution = await service.getModelDistribution(userId);
+        const modelDistribution = await service.getModelDistribution(id,role);
         return modelDistribution;
       },
       res,
@@ -71,30 +43,17 @@ router.get(
 
 // Model Distribution by Institution - Distribución por modelos agrupada por institución
 router.get(
-  "/model-distribution/by-institution/:userId",
-  async (req: Request, res: Response) => {
-    const { userId: userIdParam } = req.params;
-
-    if (!isValidPositiveInteger(userIdParam)) {
-      res
-        .status(400)
-        .json(
-          errorResponse(
-            "ID de usuario inválido",
-            "El ID debe ser un número entero positivo",
-          ),
-        );
-      return;
-    }
-
-    const userId = Number(userIdParam);
+  "/model-distribution/by-institution",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { id, role} = req.user as Omit<TokenPayload,'email'>
 
     await handleRequestWithService(
       DashboardRepository,
       DashboardService,
       async (service) => {
         const modelDistributionByInstitution =
-          await service.getModelDistributionByInstitution(userId);
+          await service.getModelDistributionByInstitution(id,role);
         return modelDistributionByInstitution;
       },
       res,
@@ -104,30 +63,17 @@ router.get(
 
 // Inventory Progress by Institution - Progreso de inventario por institución
 router.get(
-  "/inventory-progress/by-institution/:userId",
-  async (req: Request, res: Response) => {
-    const { userId: userIdParam } = req.params;
-
-    if (!isValidPositiveInteger(userIdParam)) {
-      res
-        .status(400)
-        .json(
-          errorResponse(
-            "ID de usuario inválido",
-            "El ID debe ser un número entero positivo",
-          ),
-        );
-      return;
-    }
-
-    const userId = Number(userIdParam);
+  "/inventory-progress/by-institution",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { id, role} = req.user as Omit<TokenPayload,'email'>
 
     await handleRequestWithService(
       DashboardRepository,
       DashboardService,
       async (service) => {
         const progressByInstitution =
-          await service.getInventoryProgressByInstitution(userId);
+          await service.getInventoryProgressByInstitution(id,role);
         return progressByInstitution;
       },
       res,
@@ -137,30 +83,17 @@ router.get(
 
 // Inventory Progress by Service - Progreso de inventario por servicio
 router.get(
-  "/inventory-progress/by-service/:userId",
-  async (req: Request, res: Response) => {
-    const { userId: userIdParam } = req.params;
-
-    if (!isValidPositiveInteger(userIdParam)) {
-      res
-        .status(400)
-        .json(
-          errorResponse(
-            "ID de usuario inválido",
-            "El ID debe ser un número entero positivo",
-          ),
-        );
-      return;
-    }
-
-    const userId = Number(userIdParam);
+  "/inventory-progress/by-service",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { id, role} = req.user as Omit<TokenPayload,'email'>
 
     await handleRequestWithService(
       DashboardRepository,
       DashboardService,
       async (service) => {
         const progressByService =
-          await service.getInventoryProgressByService(userId);
+          await service.getInventoryProgressByService(id,role);
         return progressByService;
       },
       res,
@@ -169,28 +102,14 @@ router.get(
 );
 
 // State by Service - Estado por servicio (nuevo)
-router.get("/state/by-service/:userId", async (req: Request, res: Response) => {
-  const { userId: userIdParam } = req.params;
-
-  if (!isValidPositiveInteger(userIdParam)) {
-    res
-      .status(400)
-      .json(
-        errorResponse(
-          "ID de usuario inválido",
-          "El ID debe ser un número entero positivo",
-        ),
-      );
-    return;
-  }
-
-  const userId = Number(userIdParam);
+router.get("/state/by-service",authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const { id, role} = req.user as Omit<TokenPayload,'email'>
 
   await handleRequestWithService(
     DashboardRepository,
     DashboardService,
     async (service) => {
-      const stateByService = await service.getStateByService(userId);
+      const stateByService = await service.getStateByService(id,role);
       return stateByService;
     },
     res,
@@ -198,28 +117,14 @@ router.get("/state/by-service/:userId", async (req: Request, res: Response) => {
 });
 
 // State by Model - Estado por modelo (nuevo)
-router.get("/state/by-model/:userId", async (req: Request, res: Response) => {
-  const { userId: userIdParam } = req.params;
-
-  if (!isValidPositiveInteger(userIdParam)) {
-    res
-      .status(400)
-      .json(
-        errorResponse(
-          "ID de usuario inválido",
-          "El ID debe ser un número entero positivo",
-        ),
-      );
-    return;
-  }
-
-  const userId = Number(userIdParam);
+router.get("/state/by-model",authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const {id,role} = req.user as Omit<TokenPayload,'email'>
 
   await handleRequestWithService(
     DashboardRepository,
     DashboardService,
     async (service) => {
-      const stateByModel = await service.getStateByModel(userId);
+      const stateByModel = await service.getStateByModel(id,role);
       return stateByModel;
     },
     res,
@@ -228,29 +133,16 @@ router.get("/state/by-model/:userId", async (req: Request, res: Response) => {
 
 // Top Inventory Takers - Inventariadores top por cantidad de bombas inventariadas este año
 router.get(
-  "/top-inventory-takers/:userId",
-  async (req: Request, res: Response) => {
-    const { userId: userIdParam } = req.params;
-
-    if (!isValidPositiveInteger(userIdParam)) {
-      res
-        .status(400)
-        .json(
-          errorResponse(
-            "ID de usuario inválido",
-            "El ID debe ser un número entero positivo",
-          ),
-        );
-      return;
-    }
-
-    const userId = Number(userIdParam);
+  "/top-inventory-takers",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { id, role} = req.user as Omit<TokenPayload,'email'>
 
     await handleRequestWithService(
       DashboardRepository,
       DashboardService,
       async (service) => {
-        const topInventoryTakers = await service.getTopInventoryTakers(userId);
+        const topInventoryTakers = await service.getTopInventoryTakers(id,role);
         return topInventoryTakers;
       },
       res,

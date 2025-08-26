@@ -1,4 +1,5 @@
 import mysql, { RowDataPacket } from "mysql2/promise";
+import { isAdminRole } from "../../utils/roleHandler";
 
 export class DashboardRepository {
   private connection: mysql.Connection;
@@ -7,44 +8,9 @@ export class DashboardRepository {
     this.connection = connection;
   }
 
-  // Mantenimientos vencidos: resumen y detalle por institución
-  // async getOverdueMaintenanceSummary(): Promise<any> {
-  //   // Resumen general
-  //   const summaryQuery = `
-  //     SELECT
-  //       COUNT(*) as totalPumps,
-  //       COUNT(CASE WHEN i.last_maintenance_date < DATE_SUB(CURDATE(), INTERVAL 2 YEAR) OR i.last_maintenance_date IS NULL THEN 1 END) as totalOverdueMaintenance
-  //     FROM inventory i
-  //   `;
-  //   const [summaryRows] =
-  //     await this.connection.execute<RowDataPacket[]>(summaryQuery);
-  //   const summary = summaryRows[0] || {
-  //     totalPumps: 0,
-  //     totalOverdueMaintenance: 0,
-  //   };
 
-  //   // Detalle por institución
-  //   const institutionsQuery = `
-  //     SELECT
-  //       ins.id as institutionId,
-  //       ins.name as institutionName,
-  //       COUNT(*) as totalPumps,
-  //       COUNT(CASE WHEN i.last_maintenance_date < DATE_SUB(CURDATE(), INTERVAL 2 YEAR) OR i.last_maintenance_date IS NULL THEN 1 END) as overdueMaintenanceCount
-  //     FROM inventory i
-  //     JOIN institutions ins ON i.institution_id = ins.id
-  //     GROUP BY ins.id, ins.name
-  //     ORDER BY ins.name
-  //   `;
-  //   const [institutionsRows] =
-  //     await this.connection.execute<RowDataPacket[]>(institutionsQuery);
-
-  //   return {
-  //     summary,
-  //     institutions: institutionsRows,
-  //   };
-  // }
-  //
   async getOverdueMaintenanceSummary(id: number, role: string): Promise<any> {
+    const isAdmin = isAdminRole(role);
     const institutionsQuery = `
     SELECT
       ins.name AS institutionName,
@@ -57,7 +23,7 @@ export class DashboardRepository {
       ) AS overdueMaintenanceCount
     FROM inventory i
     JOIN institutions ins ON i.institution_id = ins.id
-    ${role === 'admin' || role === 'root' ? '' : 'WHERE i.inventory_taker_id = ?'}
+    ${isAdmin ? '' : 'WHERE i.inventory_taker_id = ?'}
     GROUP BY ins.id, ins.name
     HAVING overdueMaintenanceCount > 0
     ORDER BY ins.name;
@@ -65,7 +31,7 @@ export class DashboardRepository {
 
     const [institutionsRows] = await this.connection.execute<RowDataPacket[]>(
       institutionsQuery,
-      role === 'admin' || role === 'root' ? [] : [id]
+      isAdmin ? [] : [id]
     );
 
 
@@ -78,23 +44,10 @@ export class DashboardRepository {
     return { institutions };
   }
 
-  // Verificar si el usuario es admin o root
-  async isUserAdmin(userId: number): Promise<boolean> {
-    const query = `
-      SELECT r.name as role_name
-      FROM users u
-      JOIN roles r ON u.role_id = r.id
-      WHERE u.id = ?
-    `;
-    const [rows] = await this.connection.execute<RowDataPacket[]>(query, [
-      userId,
-    ]);
-    return rows.length > 0 && (rows[0].role_name === "admin" || rows[0].role_name === "root");
-  }
 
   // Obtener instituciones permitidas para el usuario
-  async getUserInstitutions(userId: number): Promise<number[]> {
-    const isAdmin = await this.isUserAdmin(userId);
+  async getUserInstitutions(userId: number,role:string): Promise<number[]> {
+    const isAdmin =  isAdminRole(role)
 
     if (isAdmin) {
       // Admin puede ver todas las instituciones
@@ -116,10 +69,10 @@ export class DashboardRepository {
   }
 
   // Summary - Resumen general
-  async getSummary(userId: number): Promise<any> {
+  async getSummary(userId: number,role:string): Promise<any> {
     const currentYear = new Date().getFullYear();
-    const isAdmin = await this.isUserAdmin(userId);
-    const institutionIds = await this.getUserInstitutions(userId);
+    const isAdmin = isAdminRole(role)
+    const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
       const baseResult = {
@@ -187,8 +140,8 @@ export class DashboardRepository {
   }
 
   // Model Distribution - Distribución por modelos
-  async getModelDistribution(userId: number): Promise<any> {
-    const institutionIds = await this.getUserInstitutions(userId);
+  async getModelDistribution(userId: number,role:string): Promise<any> {
+    const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
       return { models: [] };
@@ -213,53 +166,8 @@ export class DashboardRepository {
     return { models: rows };
   }
 
-  // Institution Distribution - Distribución por instituciones (renombrado a model distribution by institution)
-  // async getModelDistributionByInstitution(userId: number): Promise<any> {
-  //   const institutionIds = await this.getUserInstitutions(userId);
-
-  //   if (institutionIds.length === 0) {
-  //     return { institutions: [] };
-  //   }
-
-  //   const placeholders = institutionIds.map(() => '?').join(',');
-  //   const query = `
-  //     SELECT
-  //       ins.name as institutionName,
-  //       m.name as modelName,
-  //       COUNT(*) as count
-  //     FROM inventory i
-  //     JOIN institutions ins ON i.institution_id = ins.id
-  //     JOIN models m ON i.model_id = m.id
-  //     WHERE i.institution_id IN (${placeholders})
-  //     GROUP BY ins.id, ins.name, m.id, m.name
-  //     ORDER BY ins.name, count DESC
-  //   `;
-
-  //   const [rows] = await this.connection.execute<RowDataPacket[]>(query, institutionIds);
-
-  //   // Estructurar por institución
-  //   const institutionsMap = new Map();
-  //   rows.forEach((row: any) => {
-  //     const { institutionName, modelName, count } = row;
-
-  //     if (!institutionsMap.has(institutionName)) {
-  //       institutionsMap.set(institutionName, {
-  //         institutionName,
-  //         models: []
-  //       });
-  //     }
-
-  //     institutionsMap.get(institutionName).models.push({
-  //       modelName,
-  //       count
-  //     });
-  //   });
-
-  //   return { institutions: Array.from(institutionsMap.values()) };
-  // }
-  //
-  async getModelDistributionByInstitution(userId: number): Promise<any> {
-    const institutionIds = await this.getUserInstitutions(userId);
+  async getModelDistributionByInstitution(userId: number,role:string): Promise<any> {
+    const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
       return {
@@ -329,9 +237,9 @@ export class DashboardRepository {
   }
 
   // Inventory Progress by Institution - Progreso por institución
-  async getInventoryProgressByInstitution(userId: number): Promise<any> {
+  async getInventoryProgressByInstitution(userId: number,role:string): Promise<any> {
     const currentYear = new Date().getFullYear();
-    const institutionIds = await this.getUserInstitutions(userId);
+    const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
       return { institutions: [] };
@@ -358,9 +266,9 @@ export class DashboardRepository {
   }
 
   // Inventory Progress by Service - Progreso por servicio
-  async getInventoryProgressByService(userId: number): Promise<any> {
+  async getInventoryProgressByService(userId: number,role:string): Promise<any> {
     const currentYear = new Date().getFullYear();
-    const institutionIds = await this.getUserInstitutions(userId);
+    const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
       return { institutions: [] };
@@ -420,9 +328,9 @@ export class DashboardRepository {
   }
 
   // Top Inventory Takers - Inventariadores top por cantidad este año
-  async getTopInventoryTakers(userId: number): Promise<any> {
+  async getTopInventoryTakers(userId: number,role:string): Promise<any> {
     const currentYear = new Date().getFullYear();
-    const isAdmin = await this.isUserAdmin(userId);
+    const isAdmin = isAdminRole(role)
 
     let query = "";
     let queryParams: any[] = [];
@@ -435,7 +343,7 @@ export class DashboardRepository {
           CONCAT(u.first_name, ' ', u.last_name) as inventoryTakerName,
           COUNT(*) as pumpsInventoriedThisYear
         FROM inventory i
-        JOIN users u ON i.inventory_taker_id = u.id
+        INNER JOIN users u ON i.inventory_taker_id = u.id
         WHERE YEAR(i.inventory_date) = ?
         GROUP BY u.id, u.first_name, u.last_name
         ORDER BY pumpsInventoriedThisYear DESC, u.first_name, u.last_name
@@ -449,10 +357,9 @@ export class DashboardRepository {
           CONCAT(u.first_name, ' ', u.last_name) as inventoryTakerName,
           COUNT(*) as pumpsInventoriedThisYear
         FROM inventory i
-        JOIN users u ON i.inventory_taker_id = u.id
+        INNER JOIN users u ON i.inventory_taker_id = u.id
         WHERE YEAR(i.inventory_date) = ? AND u.id = ?
         GROUP BY u.id, u.first_name, u.last_name
-        ORDER BY pumpsInventoriedThisYear DESC
       `;
       queryParams = [currentYear, userId];
     }
@@ -469,8 +376,8 @@ export class DashboardRepository {
   }
 
   // State by Service - Estado por servicio (bombas inoperativas)
-  async getStateByService(userId: number): Promise<any> {
-    const institutionIds = await this.getUserInstitutions(userId);
+  async getStateByService(userId: number,role:string): Promise<any> {
+    const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
       return { institutions: [] };
@@ -530,8 +437,8 @@ export class DashboardRepository {
   }
 
   // State by Model - Estado por modelo (bombas inoperativas)
-  async getStateByModel(userId: number): Promise<any> {
-    const institutionIds = await this.getUserInstitutions(userId);
+  async getStateByModel(userId: number,role:string): Promise<any> {
+    const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
       return { models: [] };

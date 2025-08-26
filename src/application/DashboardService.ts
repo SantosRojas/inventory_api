@@ -17,75 +17,68 @@ export class DashboardService {
     }
   }
   
-  async getSummary(userId: number): Promise<any> {
+  async getSummary(userId: number,role:string): Promise<any> {
     try {
-      return await this.repository.getSummary(userId);
+      return await this.repository.getSummary(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener resumen del dashboard', 500, error.message);
     }
   }
 
-  async getModelDistribution(userId: number): Promise<any> {
+  async getModelDistribution(userId: number,role:string): Promise<any> {
     try {
-      return await this.repository.getModelDistribution(userId);
+      return await this.repository.getModelDistribution(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener distribución por modelos', 500, error.message);
     }
   }
 
-  async getModelDistributionByInstitution(userId: number): Promise<any> {
+  async getModelDistributionByInstitution(userId: number,role:string): Promise<any> {
     try {
-      return await this.repository.getModelDistributionByInstitution(userId);
+      return await this.repository.getModelDistributionByInstitution(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener distribución de modelos por institución', 500, error.message);
     }
   }
 
-  async getInventoryProgressByInstitution(userId: number): Promise<any> {
+  async getInventoryProgressByInstitution(userId: number,role:string): Promise<any> {
     try {
-      return await this.repository.getInventoryProgressByInstitution(userId);
+      return await this.repository.getInventoryProgressByInstitution(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener progreso por institución', 500, error.message);
     }
   }
 
-  async getInventoryProgressByService(userId: number): Promise<any> {
+  async getInventoryProgressByService(userId: number,role:string): Promise<any> {
     try {
-      return await this.repository.getInventoryProgressByService(userId);
+      return await this.repository.getInventoryProgressByService(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener progreso por servicio', 500, error.message);
     }
   }
 
 
-  // async getOverdueMaintenance(): Promise<any> {
-  //   try {
-  //     return await this.repository.getOverdueMaintenance();
-  //   } catch (error: any) {
-  //     throw new HttpError('Error al obtener mantenimientos vencidos', 500, error.message);
-  //   }
-  // }
 
 
-  async getTopInventoryTakers(userId: number): Promise<any> {
+  async getTopInventoryTakers(userId: number,role:string): Promise<any> {
     try {
-      return await this.repository.getTopInventoryTakers(userId);
+      return await this.repository.getTopInventoryTakers(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener inventariadores top', 500, error.message);
     }
   }
 
-  async getStateByService(userId: number): Promise<any> {
+  async getStateByService(userId: number, role:string): Promise<any> {
     try {
-      return await this.repository.getStateByService(userId);
+      return await this.repository.getStateByService(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener estado por servicio', 500, error.message);
     }
   }
 
-  async getStateByModel(userId: number): Promise<any> {
+  async getStateByModel(userId: number,role:string): Promise<any> {
     try {
-      return await this.repository.getStateByModel(userId);
+      return await this.repository.getStateByModel(userId,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener estado por modelo', 500, error.message);
     }

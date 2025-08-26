@@ -56,13 +56,6 @@ router.get("/latest", authMiddleware, async (req: AuthenticatedRequest, res: Res
   const limit = req.query.limit ? Number(req.query.limit) : 10;
   const { id:userId} = req.user as Pick<TokenPayload,'id'>
 
-  if (!userId) {
-    res.status(400).json(
-      errorResponse("ID de usuario faltante", "Se requiere el ID de usuario")
-    );
-    return;
-  }
-
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
@@ -489,7 +482,6 @@ router.patch("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// Mantenimientos vencidos por institución (solo admin, requiere institutionId)
 router.get(
   "/overdue-maintenance-by-institution/:institutionId",
   async (req: Request, res: Response) => {

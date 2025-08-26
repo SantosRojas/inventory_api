@@ -27,7 +27,7 @@ export class InventoryRepository {
     // Validar que limit sea entero positivo
     let safeLimit: number | undefined;
 
-    if (limit !== undefined && Number.isInteger(limit) && limit > 0 && limit !== Infinity) {
+    if (limit !== undefined && Number.isInteger(limit) && limit > 0) {
       safeLimit = limit;
     }
 
@@ -51,9 +51,9 @@ export class InventoryRepository {
            m.name AS model, ins.name AS institution,
            s.name AS service, u.first_name AS inventory_manager
     FROM inventory i
-    JOIN models m ON i.model_id = m.id
-    JOIN institutions ins ON i.institution_id = ins.id
-    JOIN services s ON i.service_id = s.id
+    LEFT JOIN models m ON i.model_id = m.id
+    LEFT JOIN institutions ins ON i.institution_id = ins.id
+    LEFT JOIN services s ON i.service_id = s.id
     LEFT JOIN users u ON i.inventory_taker_id = u.id
     ${condition ? `WHERE ${condition}` : ""}
     ${safeOrderBy ? `ORDER BY ${safeOrderBy}` : ""}
@@ -76,7 +76,7 @@ export class InventoryRepository {
 
 
   async findAll(): Promise<InventoryToSend[]> {
-    return this.fetchWithJoins(undefined, [], undefined, 2);
+    return this.fetchWithJoins();
   }
 
   async getById(id: number): Promise<InventoryToSend | null> {

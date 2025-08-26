@@ -282,11 +282,7 @@ export class InventoryService {
   async getLatestInventoriesByUser(userId: number, limit: number): Promise<InventoryToSend[]> {
     const inventories = await this.repository.findLatestByUser(userId, limit);
 
-    if (inventories.length === 0) {
-      throw new HttpError("No se encontraron inventarios para este usuario", 404);
-    }
-
-    return inventories;
+    return inventories ?? [];
   }
 
 }
