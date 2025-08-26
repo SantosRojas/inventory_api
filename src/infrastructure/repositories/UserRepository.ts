@@ -64,6 +64,9 @@ export class UserRepository {
     return this.fetchWithJoin();
   }
 
+  async findCommonUsers():Promise<UserToSend[]>{
+    return this.fetchWithJoin('u.role_id > 2')
+  }
   async patch(
     id: number,
     user: Partial<Omit<User, "id" | "createdAt" | "updatedAt">>,

@@ -55,7 +55,8 @@ router.post('/register', async (req: Request, res: Response): Promise<any> => {
 
     // Crear token para el usuario recién registrado
     const token = jwt.sign(
-      { id: newUser.id, email: newUser.email },
+      { id: newUser.id, email: newUser.email,role:newUser.role },
+
       process.env.JWT_SECRET || 'secret',
       { expiresIn: '1d' }
     );
@@ -92,7 +93,7 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
     if (!valid) return res.status(401).json(errorResponse('Credenciales inválidas'));
     
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role:user.role },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: '1d' }
     );

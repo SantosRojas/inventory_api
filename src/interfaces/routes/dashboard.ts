@@ -4,7 +4,7 @@ import { DashboardService } from "../../application/DashboardService";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
 import { isValidPositiveInteger } from "../../utils/validHandler";
 import { errorResponse } from "../../utils/responseHelpers";
-import { authMiddleware } from "./middlewares/authMiddleware";
+import { AuthenticatedRequest, authMiddleware, TokenPayload } from "./middlewares/authMiddleware";
 
 const router = Router();
 
@@ -262,12 +262,13 @@ router.get(
 router.get(
   "/overdue-maintenance/by-institution",
   authMiddleware,
-  async (req: Request, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { id, role } = req.user as Omit<TokenPayload, 'email'>; 
     await handleRequestWithService(
       DashboardRepository,
       DashboardService,
       async (service) => {
-        const result = await service.getOverdueMaintenanceSummary();
+        const result = await service.getOverdueMaintenanceSummary(id, role);
         return result;
       },
       res,

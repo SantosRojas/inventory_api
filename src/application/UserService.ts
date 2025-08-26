@@ -37,6 +37,31 @@ export class UserService {
     });
   }
 
+  async findFilteredUsers(userId:number,userRole:string):Promise<Omit<UserToSend, "password">[]> {
+    let users;
+    if(userRole === 'root'){
+      users = await this.repository.findAll();
+    }
+    else if(userRole === 'admin'){
+      const commonUsers = await this.repository.findCommonUsers()
+      const myUser = await  this.repository.findById(userId)
+      if(myUser){ 
+        users = [myUser, ...commonUsers]
+      }
+      else{
+        users = commonUsers
+      }
+    }
+    else{
+      const user = await this.repository.findById(userId)
+      users = user ? [user] : [];
+    }
+    return users.map((user) => {
+      const { password, ...safeUser } = user;
+      return safeUser;
+    });
+  }
+
   async patch(
     id: number,
     user: Partial<Omit<User, "id" | "createdAt" | "updatedAt">>,

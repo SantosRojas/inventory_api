@@ -9,9 +9,9 @@ export class DashboardService {
     this.repository = repository;
   }
   
-  async getOverdueMaintenanceSummary(): Promise<any> {
+  async getOverdueMaintenanceSummary(id:number,role:string): Promise<any> {
     try {
-      return await this.repository.getOverdueMaintenanceSummary();
+      return await this.repository.getOverdueMaintenanceSummary(id,role);
     } catch (error: any) {
       throw new HttpError('Error al obtener el resumen de mantenimientos vencidos', 500, error.message);
     }

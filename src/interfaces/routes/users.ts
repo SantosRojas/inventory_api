@@ -4,6 +4,7 @@ import { UserService } from "../../application/UserService";
 import {
   AuthenticatedRequest,
   authMiddleware,
+  TokenPayload,
 } from "./middlewares/authMiddleware";
 import { errorResponse } from "../../utils/responseHelpers";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
@@ -46,6 +47,20 @@ router.get("/", async (req: Request, res: Response) => {
     UserService,
     async (service) => {
       const users = await service.findAll();
+      return users;
+    },
+    res,
+  );
+});
+
+router.get("/filtered", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+
+  const { id, role } = req.user as Omit<TokenPayload,'email'>
+  handleRequestWithService(
+    UserRepository,
+    UserService,
+    async (service) => {
+      const users = await service.findFilteredUsers(id, role);
       return users;
     },
     res,

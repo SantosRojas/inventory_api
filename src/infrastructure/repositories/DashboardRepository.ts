@@ -44,20 +44,30 @@ export class DashboardRepository {
   //   };
   // }
   //
-  async getOverdueMaintenanceSummary(): Promise<any> {
+  async getOverdueMaintenanceSummary(id: number, role: string): Promise<any> {
     const institutionsQuery = `
-      SELECT
-        ins.name AS institutionName,
-        COUNT(CASE WHEN i.last_maintenance_date < DATE_SUB(CURDATE(), INTERVAL 2 YEAR) OR i.last_maintenance_date IS NULL THEN 1 END) AS overdueMaintenanceCount
-      FROM inventory i
-      JOIN institutions ins ON i.institution_id = ins.id
-      GROUP BY ins.id, ins.name
-      HAVING overdueMaintenanceCount > 0
-      ORDER BY ins.name;
-    `;
+    SELECT
+      ins.name AS institutionName,
+      COUNT(
+        CASE
+          WHEN i.last_maintenance_date < DATE_SUB(CURDATE(), INTERVAL 2 YEAR)
+            OR i.last_maintenance_date IS NULL
+          THEN 1
+        END
+      ) AS overdueMaintenanceCount
+    FROM inventory i
+    JOIN institutions ins ON i.institution_id = ins.id
+    ${role === 'admin' || role === 'root' ? '' : 'WHERE i.inventory_taker_id = ?'}
+    GROUP BY ins.id, ins.name
+    HAVING overdueMaintenanceCount > 0
+    ORDER BY ins.name;
+  `;
 
-    const [institutionsRows] =
-      await this.connection.execute<RowDataPacket[]>(institutionsQuery);
+    const [institutionsRows] = await this.connection.execute<RowDataPacket[]>(
+      institutionsQuery,
+      role === 'admin' || role === 'root' ? [] : [id]
+    );
+
 
     // Mapear correctamente el resultado para asegurar el tipo
     const institutions = institutionsRows.map((row) => ({
@@ -429,7 +439,6 @@ export class DashboardRepository {
         WHERE YEAR(i.inventory_date) = ?
         GROUP BY u.id, u.first_name, u.last_name
         ORDER BY pumpsInventoriedThisYear DESC, u.first_name, u.last_name
-        LIMIT 10
       `;
       queryParams = [currentYear];
     } else {

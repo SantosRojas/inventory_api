@@ -8,6 +8,7 @@ import { errorResponse, success } from "../../utils/responseHelpers";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
 import { isValidPositiveInteger } from "../../utils/validHandler";
 import { HttpError } from "../../utils/ErrorHandler";
+import { AuthenticatedRequest, authMiddleware, TokenPayload } from "./middlewares/authMiddleware";
 
 const router = Router();
 
@@ -51,9 +52,9 @@ router.get("/", async (req: Request, res: Response): Promise<any> => {
   );
 });
 
-router.get("/latest", async (req: Request, res: Response) => {
+router.get("/latest", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const limit = req.query.limit ? Number(req.query.limit) : 10;
-  const userId = req.query.userId ? Number(req.query.userId) : undefined;
+  const { id:userId} = req.user as Pick<TokenPayload,'id'>
 
   if (!userId) {
     res.status(400).json(
