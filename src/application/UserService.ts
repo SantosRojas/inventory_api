@@ -4,6 +4,7 @@ import { UserRepository } from "../infrastructure/repositories/UserRepository";
 import bcrypt from "bcryptjs";
 import { HttpError } from "../utils/ErrorHandler";
 import { parseForeignKeyError } from "../utils/parseForeignKeyError";
+import { parseDuplicateError } from "../utils/parseDuplicateError";
 
 export class UserService {
   private repository: UserRepository;
@@ -14,7 +15,15 @@ export class UserService {
   async register(
     user: Omit<User, "id" | "createdAt" | "updatedAt">,
   ): Promise<number> {
-    return this.repository.create(user);
+    try {
+      return await this.repository.create(user);
+    } catch (error: any) {
+      parseDuplicateError(error, {
+        unique_email: "Este email ya está en uso",
+        unique_cell_phone:
+          "Ya existe un usuario con ese número de telefono",
+      });
+    }
   }
 
   async findByEmail(email: string): Promise<UserToSend | null> {
@@ -37,22 +46,22 @@ export class UserService {
     });
   }
 
-  async findFilteredUsers(userId:number,userRole:string):Promise<Omit<UserToSend, "password">[]> {
+  async findFilteredUsers(userId: number, userRole: string): Promise<Omit<UserToSend, "password">[]> {
     let users;
-    if(userRole === 'root'){
+    if (userRole === 'root') {
       users = await this.repository.findAll();
     }
-    else if(userRole === 'admin'){
+    else if (userRole === 'admin') {
       const commonUsers = await this.repository.findCommonUsers()
-      const myUser = await  this.repository.findById(userId)
-      if(myUser){ 
+      const myUser = await this.repository.findById(userId)
+      if (myUser) {
         users = [myUser, ...commonUsers]
       }
-      else{
+      else {
         users = commonUsers
       }
     }
-    else{
+    else {
       const user = await this.repository.findById(userId)
       users = user ? [user] : [];
     }

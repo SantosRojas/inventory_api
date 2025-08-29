@@ -7,8 +7,8 @@ import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import Joi from 'joi';
 import { errorResponse, success } from '../../utils/responseHelpers';
-import { parseDuplicateError } from '../../utils/parseDuplicateError';
 import { AuthenticatedRequest, authMiddleware } from './middlewares/authMiddleware';
+import { handleRequestWithService } from '../../utils/handleRequestWithService';
 
 const router = Router();
 
@@ -32,49 +32,46 @@ router.post('/register', async (req: Request, res: Response): Promise<any> => {
   if (error) {
     return res.status(400).json(errorResponse('Datos inválidos', error.details));
   }
-  const connection = await pool.getConnection();
-  try {
-    const repo = new UserRepository(connection);
-    const service = new UserService(repo);
-    const { firstName, lastName, cellPhone, email, password, roleId } = req.body;
-    const hashed = await bcrypt.hash(password, 10);
-    const createdId = await service.register({
-      firstName,
-      lastName,
-      cellPhone,
-      email,
-      password: hashed,
-      role_id: roleId || 5, // Por defecto, rol guest
-    });
+  
+  const { firstName, lastName, cellPhone, email, password, roleId } = req.body;
 
-    // Obtener el usuario recién creado
-    const newUser = await service.findById(createdId);
-    if (!newUser) {
-      return res.status(500).json(errorResponse('Error al crear usuario'));
-    }
+  handleRequestWithService(
+    UserRepository,
+    UserService,
+    async (service) => {
+      const hashed = await bcrypt.hash(password, 10);
+      const createdId = await service.register({
+        firstName,
+        lastName,
+        cellPhone,
+        email,
+        password: hashed,
+        role_id: roleId || 5, // Por defecto, rol guest
+      });
 
-    // Crear token para el usuario recién registrado
-    const token = jwt.sign(
-      { id: newUser.id, email: newUser.email,role:newUser.role },
-
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: '1d' }
-    );
-
-    // Devolver usando tu estructura success
-    res.status(201).json(success({ 
-      token,
-      user: newUser 
-    }));
-  } catch (err: any) {
-    parseDuplicateError(err,
-      {
-        "unique_email": "El correo electrónico ya está en uso"
+      // Obtener el usuario recién creado
+      const newUser = await service.findById(createdId);
+      if (!newUser) {
+        return res.status(500).json(errorResponse('Error al crear usuario'));
       }
-    );
-  } finally {
-    connection.release();
-  }
+
+      // Crear token para el usuario recién registrado
+      const token = jwt.sign(
+        { id: newUser.id, email: newUser.email, role: newUser.role },
+
+        process.env.JWT_SECRET || 'secret',
+        { expiresIn: '1d' }
+
+      );
+      return {
+        token,
+        user: newUser
+      }
+    },
+    res,
+    201
+  )
+
 });
 
 router.post('/login', async (req: Request, res: Response): Promise<any> => {
@@ -91,20 +88,20 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
     if (!user) return res.status(401).json(errorResponse('Credenciales inválidas'));
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json(errorResponse('Credenciales inválidas'));
-    
+
     const token = jwt.sign(
-      { id: user.id, email: user.email, role:user.role },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: '1d' }
     );
-    
+
     // Remover la contraseña antes de enviar los datos del usuario
     const { password: _, ...userWithoutPassword } = user;
-    
+
     // Devolver usando tu estructura success
-    res.json(success({ 
+    res.json(success({
       token,
-      user: userWithoutPassword 
+      user: userWithoutPassword
     }));
   } catch (err) {
     res.status(500).json(errorResponse('Error interno del servidor', process.env.NODE_ENV === 'development' ? (err as Error).message : undefined));
@@ -123,7 +120,7 @@ router.get('/me', authMiddleware, async (req: AuthenticatedRequest, res: Respons
     // ✅ Si el payload del token es un objeto, accede al ID
     if (typeof req.user !== 'object' || !('id' in req.user)) {
       res.status(401).json(errorResponse('Token inválido'));
-      return 
+      return
     }
 
     const userId = req.user.id;
@@ -131,7 +128,7 @@ router.get('/me', authMiddleware, async (req: AuthenticatedRequest, res: Respons
 
     if (!user) {
       res.status(404).json(errorResponse('Usuario no encontrado'));
-      return 
+      return
     }
 
     res.json(success(user));
