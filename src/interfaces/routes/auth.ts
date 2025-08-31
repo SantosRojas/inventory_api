@@ -1,13 +1,12 @@
 import { Router } from 'express';
-import { pool } from '../../infrastructure/database/mysql';
 import { UserRepository } from '../../infrastructure/repositories/UserRepository';
 import { UserService } from '../../application/UserService';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import Joi from 'joi';
-import { errorResponse, success } from '../../utils/responseHelpers';
-import { AuthenticatedRequest, authMiddleware } from './middlewares/authMiddleware';
+import { errorResponse} from '../../utils/responseHelpers';
+import { AuthenticatedRequest, authMiddleware, TokenPayload } from './middlewares/authMiddleware';
 import { handleRequestWithService } from '../../utils/handleRequestWithService';
 
 const router = Router();
@@ -79,64 +78,50 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
   if (error) {
     return res.status(400).json(errorResponse('Datos inválidos', error.details));
   }
-  const connection = await pool.getConnection();
-  try {
-    const repo = new UserRepository(connection);
-    const service = new UserService(repo);
-    const { email, password } = req.body;
-    const user = await service.findByEmail(email);
-    if (!user) return res.status(401).json(errorResponse('Credenciales inválidas'));
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json(errorResponse('Credenciales inválidas'));
+  const { email, password } = req.body;
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: '1d' }
-    );
+  handleRequestWithService(
+    UserRepository,
+    UserService,
+    async (service) => {
+      const user = await service.findByEmail(email);
+      if (!user) return res.status(401).json(errorResponse('Credenciales inválidas'));
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return res.status(401).json(errorResponse('Credenciales inválidas'));
 
-    // Remover la contraseña antes de enviar los datos del usuario
-    const { password: _, ...userWithoutPassword } = user;
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET || 'secret',
+        { expiresIn: '1d' }
+      );
 
-    // Devolver usando tu estructura success
-    res.json(success({
-      token,
-      user: userWithoutPassword
-    }));
-  } catch (err) {
-    res.status(500).json(errorResponse('Error interno del servidor', process.env.NODE_ENV === 'development' ? (err as Error).message : undefined));
-  } finally {
-    connection.release();
-  }
+      // Remover la contraseña antes de enviar los datos del usuario
+      const { password: _, ...userWithoutPassword } = user;
+
+      // Devolver usando tu estructura success
+      return {
+        token,
+        user: userWithoutPassword
+      };
+    },
+    res,
+    200
+  );
 });
 
 
 router.get('/me', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const connection = await pool.getConnection();
-  try {
-    const repo = new UserRepository(connection);
-    const service = new UserService(repo);
+  const { id } = req.user as Pick<TokenPayload, 'id'>;
 
-    // ✅ Si el payload del token es un objeto, accede al ID
-    if (typeof req.user !== 'object' || !('id' in req.user)) {
-      res.status(401).json(errorResponse('Token inválido'));
-      return
-    }
-
-    const userId = req.user.id;
-    const user = await service.findById(userId);
-
-    if (!user) {
-      res.status(404).json(errorResponse('Usuario no encontrado'));
-      return
-    }
-
-    res.json(success(user));
-  } catch (error) {
-    res.status(500).json(errorResponse('Error interno del servidor'));
-  } finally {
-    connection.release();
-  }
+  handleRequestWithService(
+    UserRepository,
+    UserService,
+    async (service) => {
+      const user = await service.findById(id);
+      return user;
+    },
+    res
+  );
 });
 
 

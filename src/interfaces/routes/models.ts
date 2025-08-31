@@ -1,10 +1,11 @@
-import e, { Router } from "express";
+import { Router } from "express";
 import Joi from "joi";
 import { ModelRepository } from "../../infrastructure/repositories/ModelRepository";
 import { ModelService } from "../../application/ModelService";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
 import { isValidPositiveInteger } from "../../utils/validHandler";
 import { HttpError } from "../../utils/ErrorHandler";
+import { AuthenticatedRequest, authMiddleware } from "./middlewares/authMiddleware";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ const modelUpdateSchema = Joi.object({
 });
 
 
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req: AuthenticatedRequest, res) => {
     handleRequestWithService(
         ModelRepository,
         ModelService,
@@ -32,7 +33,7 @@ router.get("/", async (req, res) => {
     );
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
     const { id: idParam } = req.params;
     // Validar que sea solo dígitos (número entero positivo)
     if (!isValidPositiveInteger(idParam)) {
@@ -54,7 +55,7 @@ router.get("/:id", async (req, res) => {
 });
 
 
-router.get("/code/:code", async (req, res) => {
+router.get("/code/:code", authMiddleware, async (req: AuthenticatedRequest, res) => {
     if (!req.params.code || typeof req.params.code !== 'string') {
         // throw new HttpError("Código inválido", 400, "El código debe ser una cadena no vacía");
         res.status(400).json({ error: "Código inválido", details: "El código debe ser una cadena no vacía" });
@@ -73,7 +74,7 @@ router.get("/code/:code", async (req, res) => {
 });
 
 
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req: AuthenticatedRequest, res) => {
     const { error } = modelSchema.validate(req.body);
     if (error) res.status(400).json({ error: "Datos inválidos", details: error.details[0].message });
 
@@ -91,7 +92,7 @@ router.post("/", async (req, res) => {
 });
 
 
-router.patch("/:id", async (req, res): Promise<any> => {
+router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res): Promise<any> => {
 
     const { id: idParam } = req.params;
     const body = req.body;
@@ -123,7 +124,7 @@ router.patch("/:id", async (req, res): Promise<any> => {
 });
 
 
-router.delete("/:id", async (req, res): Promise<any> => {
+router.delete("/:id", authMiddleware, async (req: AuthenticatedRequest, res): Promise<any> => {
     const { id: idParam } = req.params;
     // Validar que sea solo dígitos (número entero positivo)
     if (!isValidPositiveInteger(idParam)) {

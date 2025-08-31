@@ -1,8 +1,6 @@
 import { Router, Request, Response } from "express";
 import { InventoryRepository } from "../../infrastructure/repositories/InventoryRepository";
 import { InventoryService } from "../../application/InventoryService";
-//import { authMiddleware } from "./middlewares/authMiddleware";
-import { pool } from "../../infrastructure/database/mysql";
 import Joi from "joi";
 import { errorResponse, success } from "../../utils/responseHelpers";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
@@ -40,7 +38,7 @@ const inventoryPatchSchema = inventorySchema.fork(
   (schema) => schema.optional(),
 );
 
-router.get("/", async (req: Request, res: Response): Promise<any> => {
+router.get("/", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
@@ -66,7 +64,7 @@ router.get("/latest", authMiddleware, async (req: AuthenticatedRequest, res: Res
   );
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   // Validación del ID
   const { id: idParam } = req.params;
   if (!isValidPositiveInteger(idParam)) {
@@ -94,7 +92,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   );
 });
 
-router.get("/serial/:serialNumber", async (req: Request, res: Response) => {
+router.get("/serial/:serialNumber",authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
@@ -108,7 +106,7 @@ router.get("/serial/:serialNumber", async (req: Request, res: Response) => {
   );
 });
 
-router.get("/qr/:qrCode", async (req: Request, res: Response) => {
+router.get("/qr/:qrCode", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
@@ -122,7 +120,7 @@ router.get("/qr/:qrCode", async (req: Request, res: Response) => {
 
 //ruta para obtener inventario por model id
 
-router.get("/model/:modelId", async (req: Request, res: Response) => {
+router.get("/model/:modelId", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
@@ -140,7 +138,8 @@ router.get("/model/:modelId", async (req: Request, res: Response) => {
 
 router.get(
   "/institution/:institutionId",
-  async (req: Request, res: Response) => {
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
     await handleRequestWithService(
       InventoryRepository,
       InventoryService,
@@ -156,7 +155,7 @@ router.get(
 );
 
 //ruta para obtener inventario por status
-router.get("/status/:status", async (req: Request, res: Response) => {
+router.get("/status/:status", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
@@ -169,7 +168,7 @@ router.get("/status/:status", async (req: Request, res: Response) => {
 });
 
 //ruta para obtener inventario por service id
-router.get("/service/:serviceId", async (req: Request, res: Response) => {
+router.get("/service/:serviceId", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   await handleRequestWithService(
     InventoryRepository,
     InventoryService,
@@ -187,7 +186,8 @@ router.get("/service/:serviceId", async (req: Request, res: Response) => {
 // Ruta para obtener inventario por serviceId e institutionId
 router.get(
   "/institution/:institutionId/service/:serviceId",
-  async (req: Request, res: Response) => {
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
     await handleRequestWithService(
       InventoryRepository,
       InventoryService,
@@ -207,7 +207,8 @@ router.get(
 
 router.get(
   "/inventory-taker/:inventoryTakerId",
-  async (req: Request, res: Response) => {
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
     await handleRequestWithService(
       InventoryRepository,
       InventoryService,
@@ -225,7 +226,8 @@ router.get(
 // Obtener inventarios del presente año por institución
 router.get(
   "/current-year/:institutionId",
-  async (req: Request, res: Response) => {
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
     const { institutionId: institutionIdParam } = req.params;
 
     if (!isValidPositiveInteger(institutionIdParam)) {
@@ -258,7 +260,8 @@ router.get(
 // Obtener bombas NO inventariadas este año por institución
 router.get(
   "/not-inventoried/:institutionId",
-  async (req: Request, res: Response) => {
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
     const { institutionId: institutionIdParam } = req.params;
 
     if (!isValidPositiveInteger(institutionIdParam)) {
@@ -289,7 +292,7 @@ router.get(
 );
 
 //ruta para insertar un inventario
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { error } = inventorySchema.validate(req.body);
   if (error) {
     res
@@ -315,7 +318,7 @@ router.post("/", async (req: Request, res: Response) => {
   );
 });
 
-router.post("/bulk-create", async (req: Request, res: Response) => {
+router.post("/bulk-create", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   if (!Array.isArray(req.body) || req.body.length === 0) {
     res
       .status(400)
@@ -366,7 +369,7 @@ router.post("/bulk-create", async (req: Request, res: Response) => {
 });
 
 //ruta para eliminar un inventario por ID
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id: idParam } = req.params;
   // Validar que sea solo dígitos (número entero positivo)
   if (!isValidPositiveInteger(idParam)) {
@@ -392,7 +395,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   );
 });
 
-router.patch("/bulk-update", async (req: Request, res: Response) => {
+router.patch("/bulk-update", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const body = req.body;
 
   if (!Array.isArray(body) || body.length === 0) {
@@ -429,7 +432,7 @@ router.patch("/bulk-update", async (req: Request, res: Response) => {
   );
 });
 
-router.patch("/:id", async (req: Request, res: Response) => {
+router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const dataBody = req.body;
     // Validación: Asegurar que al menos haya algún dato para actualizar
@@ -484,7 +487,8 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
 router.get(
   "/overdue-maintenance-by-institution/:institutionId",
-  async (req: Request, res: Response) => {
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
     const { institutionId: institutionIdParam } = req.params;
     if (!isValidPositiveInteger(institutionIdParam)) {
       res

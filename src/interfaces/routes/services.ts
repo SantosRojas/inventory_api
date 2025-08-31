@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ServiceRepository } from "../../infrastructure/repositories/ServiceRepository";
 import { ServiceService } from "../../application/ServiceService";
-import { authMiddleware } from "./middlewares/authMiddleware";
+import { AuthenticatedRequest, authMiddleware } from "./middlewares/authMiddleware";
 import Joi from "joi";
 import { Request, Response } from "express";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
@@ -16,7 +16,7 @@ const serviceSchema = Joi.object({
 });
 
 // POST /services
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { error } = serviceSchema.validate(req.body);
   if (error) {
     res.status(400).json(errorResponse("Datos inválidos", error.details));
@@ -36,7 +36,7 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 // GET /services
-router.get("/", async (_req: Request, res: Response) => {
+router.get("/", authMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
   await handleRequestWithService(
     ServiceRepository,
     ServiceService,
@@ -49,7 +49,7 @@ router.get("/", async (_req: Request, res: Response) => {
 });
 
 // GET /services/:id
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id: idParam } = req.params;
   // Validar que sea solo dígitos (número entero positivo)
   if (!isValidPositiveInteger(idParam)) {
@@ -77,7 +77,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 });
 
 // PUT /services/:id
-router.patch("/:id", async (req: Request, res: Response) => {
+router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id: idParam } = req.params;
   // Validar que sea solo dígitos (número entero positivo)
   if (!isValidPositiveInteger(idParam)) {
@@ -110,7 +110,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 });
 
 // DELETE /services/:id
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id: idParam } = req.params;
   // Validar que sea solo dígitos (número entero positivo)
   if (!isValidPositiveInteger(idParam)) {

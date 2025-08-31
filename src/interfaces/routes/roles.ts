@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "./middlewares/authMiddleware";
+import { AuthenticatedRequest, authMiddleware } from "./middlewares/authMiddleware";
 import Joi from "joi";
 import { Request, Response } from "express";
 import { errorResponse } from "../../utils/responseHelpers";
@@ -17,7 +17,7 @@ const roleSchema = Joi.object({
   description: Joi.string().required(),
 });
 
-router.post("/", async (req: Request, res: Response): Promise<void> => {
+router.post("/", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { error } = roleSchema.validate(req.body);
   if (error) {
     res.status(400).json(errorResponse("Datos inválidos", error.details));
@@ -36,7 +36,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
   );
 });
 
-router.get("/", async (_req: Request, res: Response): Promise<void> => {
+router.get("/", authMiddleware, async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
   handleRequestWithService(
     RoleRepository,
     RoleService,
@@ -48,7 +48,7 @@ router.get("/", async (_req: Request, res: Response): Promise<void> => {
   );
 });
 
-router.get("/:id", async (req: Request, res: Response): Promise<void> => {
+router.get("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { id: idParam } = req.params;
 
   if (isValidPositiveInteger(idParam) === false) {
@@ -70,7 +70,7 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
   );
 });
 
-router.patch("/:id", async (req: Request, res: Response): Promise<any> => {
+router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   const { id: idParam } = req.params;
 
   if (isValidPositiveInteger(idParam) === false) {
@@ -98,7 +98,7 @@ router.patch("/:id", async (req: Request, res: Response): Promise<any> => {
   );
 });
 
-router.delete("/:id", async (req: Request, res: Response): Promise<any> => {
+router.delete("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   const { id: idParam } = req.params;
 
   if (isValidPositiveInteger(idParam) === false) {

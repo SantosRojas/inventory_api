@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { InstitutionRepository } from "../../infrastructure/repositories/InstitutionRepository";
 import { InstitutionService } from "../../application/InstitutionService";
-import { authMiddleware } from "./middlewares/authMiddleware";
+import { AuthenticatedRequest, authMiddleware } from "./middlewares/authMiddleware";
 import Joi from "joi";
 import { Request, Response } from "express";
 import { errorResponse } from "../../utils/responseHelpers";
@@ -16,7 +16,8 @@ const institutionSchema = Joi.object({
   code: Joi.string().required(),
 });
 
-router.post("/", async (req: Request, res: Response): Promise<void> => {
+// Ruta para crear una nueva institución
+router.post("/", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { error } = institutionSchema.validate(req.body);
   if (error) {
     res.status(400).json(errorResponse("Datos inválidos", error.details));
@@ -35,7 +36,8 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
   );
 });
 
-router.get("/", async (_req: Request, res: Response): Promise<void> => {
+// Ruta para obtener todas las instituciones
+router.get("/", authMiddleware, async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
   handleRequestWithService(
     InstitutionRepository,
     InstitutionService,
@@ -47,7 +49,8 @@ router.get("/", async (_req: Request, res: Response): Promise<void> => {
   );
 });
 
-router.get("/:id", async (req: Request, res: Response): Promise<void> => {
+// Ruta para obtener una institución por ID
+router.get("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { id: idParam } = req.params;
 
   if (isValidPositiveInteger(idParam) === false) {
@@ -69,7 +72,8 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
   );
 });
 
-router.patch("/:id", async (req: Request, res: Response): Promise<any> => {
+// Ruta para actualizar una institución
+router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   const { id: idParam } = req.params;
 
   if (isValidPositiveInteger(idParam) === false) {
@@ -97,7 +101,9 @@ router.patch("/:id", async (req: Request, res: Response): Promise<any> => {
   );
 });
 
-router.delete("/:id", async (req: Request, res: Response): Promise<any> => {
+
+// Ruta para eliminar una institución
+router.delete("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   const { id: idParam } = req.params;
 
   if (isValidPositiveInteger(idParam) === false) {

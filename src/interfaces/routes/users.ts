@@ -1,4 +1,4 @@
-import e, { Router, Request, Response } from "express";
+import { Router, Request, Response } from "express";
 import { UserRepository } from "../../infrastructure/repositories/UserRepository";
 import { UserService } from "../../application/UserService";
 import {
@@ -41,7 +41,7 @@ const resetPasswordSchema = Joi.object({
     }),
 });
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   handleRequestWithService(
     UserRepository,
     UserService,
@@ -67,7 +67,7 @@ router.get("/filtered", authMiddleware, async (req: AuthenticatedRequest, res: R
   );
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id: idParam } = req.params;
   if (!isValidPositiveInteger(idParam)) {
     res
@@ -96,7 +96,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 });
 
 //actualice usuario
-router.patch("/:id", async (req: Request, res: Response) => {
+router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id: idParam } = req.params;
   if (!isValidPositiveInteger(idParam)) {
     res
@@ -132,49 +132,16 @@ router.patch("/:id", async (req: Request, res: Response) => {
   );
 });
 
-// router.patch("/:id/password", async (req: Request, res: Response) => {
-//   const { id: idParam } = req.params;
-//   if (!isValidPositiveInteger(idParam))
-//     throw new HttpError(
-//       "ID inválido",
-//       400,
-//       "El ID debe ser un número entero positivo",
-//     );
-//   const id = Number(idParam);
-//   const { currentPassword, newPassword } = req.body;
 
-//   if (!currentPassword || !newPassword) {
-//     res
-//       .status(400)
-//       .json(errorResponse("Se requieren currentPassword y newPassword"));
-//     return;
-//   }
-
-//   const { error } = changePasswordSchema.validate({
-//     currentPassword,
-//     newPassword,
-//   });
-//   if (error) {
-//     res.status(400).json(errorResponse("Datos inválidos", error.details));
-//     return;
-//   }
-
-//   await handleRequestWithService(
-//     UserRepository,
-//     UserService,
-//     async (service) => {
-//       await service.changePassword(id, currentPassword, newPassword);
-//       return "Contraseña actualizada exitosamente";
-//     },
-//     res,
-//   );
-// });
-
+//ruta para cambiar la contraseña
 router.patch(
   "/:id/password",
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
     const { id: idParam } = req.params;
+
+    const {id:requestingUserId,role:requestingUserRole} = req.user as Pick<TokenPayload,'id'|'role'>
+
     if (!isValidPositiveInteger(idParam))
       throw new HttpError(
         "ID inválido",
@@ -184,9 +151,7 @@ router.patch(
     const id = Number(idParam);
     const {
       currentPassword,
-      newPassword,
-      requestingUserId,
-      requestingUserRole,
+      newPassword
     } = req.body;
 
     // Validar que se proporcione newPassword
@@ -197,7 +162,7 @@ router.patch(
 
     // Verificar si es cambio de contraseña propia o reset administrativo
     const isOwnPasswordChange = requestingUserId === id;
-    const isAdminReset = requestingUserRole === "admin" && !isOwnPasswordChange;
+    const isAdminReset = (requestingUserRole === "admin" || requestingUserRole === "superadmin") && !isOwnPasswordChange;
 
     // Para cambio de contraseña propia, se requiere currentPassword
     if (isOwnPasswordChange && !currentPassword) {
@@ -250,7 +215,7 @@ router.patch(
   },
 );
 
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id: idParam } = req.params;
   if (!isValidPositiveInteger(idParam)) {
     res
@@ -276,7 +241,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
 });
 
 // ruta para obtener recuperar usuario y contraseña
-router.post("/recover", async (req: Request, res: Response) => {
+router.post("/recover", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { email } = req.body;
   if (!email) {
     res.status(400).json(errorResponse("Email es requerido"));
