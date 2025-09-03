@@ -1,8 +1,8 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { InventoryRepository } from "../../infrastructure/repositories/InventoryRepository";
 import { InventoryService } from "../../application/InventoryService";
 import Joi from "joi";
-import { errorResponse, success } from "../../utils/responseHelpers";
+import { errorResponse } from "../../utils/responseHelpers";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
 import { isValidPositiveInteger } from "../../utils/validHandler";
 import { HttpError } from "../../utils/ErrorHandler";
@@ -433,8 +433,7 @@ router.patch("/bulk-update", authMiddleware, async (req: AuthenticatedRequest, r
 });
 
 router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const dataBody = req.body;
+  const dataBody = req.body;
     // Validación: Asegurar que al menos haya algún dato para actualizar
     if (Object.keys(dataBody).length === 0) {
       throw new HttpError(
@@ -454,7 +453,6 @@ router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Resp
       );
     }
     const id = Number(idParam);
-    console.log("Data body:", dataBody);
 
     const { error } = inventoryPatchSchema.validate(dataBody);
     if (error) {
@@ -474,15 +472,6 @@ router.patch("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Resp
       },
       res,
     );
-  } catch (error) {
-    if (error instanceof HttpError) {
-      res
-        .status(error.statusCode)
-        .json({ error: error.message, details: error.details });
-    } else {
-      res.status(500).json({ error: "Error interno del servidor" });
-    }
-  }
 });
 
 router.get(

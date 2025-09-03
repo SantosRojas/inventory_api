@@ -43,7 +43,7 @@ export class ModelService {
     try {
       return await this.repository.create(model);
     } catch (error) {
-      throw parseDuplicateError(error, {
+      parseDuplicateError(error, {
         unique_code: "Este código ya está en uso",
         unique_name: "Ya existe un modelo con ese nombre",
       });
@@ -66,7 +66,7 @@ export class ModelService {
       }
       return updatedModel;
     } catch (error) {
-      throw parseDuplicateError(error, {
+      parseDuplicateError(error, {
         unique_code: "Este código ya está en uso",
         unique_name: "Ya existe un modelo con ese nombre",
       });
