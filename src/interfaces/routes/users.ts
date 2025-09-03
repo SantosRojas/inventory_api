@@ -11,6 +11,7 @@ import { handleRequestWithService } from "../../utils/handleRequestWithService";
 import { HttpError } from "../../utils/ErrorHandler";
 import { isValidPositiveInteger } from "../../utils/validHandler";
 import Joi from "joi";
+import { isAdminRole } from "../../utils/roleHandler";
 
 const router = Router();
 
@@ -162,7 +163,7 @@ router.patch(
 
     // Verificar si es cambio de contraseña propia o reset administrativo
     const isOwnPasswordChange = requestingUserId === id;
-    const isAdminReset = (requestingUserRole === "admin" || requestingUserRole === "superadmin") && !isOwnPasswordChange;
+    const isAdminReset = isAdminRole(requestingUserRole) && !isOwnPasswordChange;
 
     // Para cambio de contraseña propia, se requiere currentPassword
     if (isOwnPasswordChange && !currentPassword) {

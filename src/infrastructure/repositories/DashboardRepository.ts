@@ -1,5 +1,5 @@
 import mysql, { RowDataPacket } from "mysql2/promise";
-import { isAdminRole } from "../../utils/roleHandler";
+import { canViewAllReports } from "../../utils/roleHandler";
 
 export class DashboardRepository {
   private connection: mysql.Connection;
@@ -10,7 +10,7 @@ export class DashboardRepository {
 
 
   async getOverdueMaintenanceSummary(id: number, role: string): Promise<any> {
-    const isAdmin = isAdminRole(role);
+    const isAdmin = canViewAllReports(role);
     const institutionsQuery = `
     SELECT
       ins.name AS institutionName,
@@ -47,7 +47,7 @@ export class DashboardRepository {
 
   // Obtener instituciones permitidas para el usuario
   async getUserInstitutions(userId: number,role:string): Promise<number[]> {
-    const isAdmin =  isAdminRole(role)
+    const isAdmin =  canViewAllReports(role)
 
     if (isAdmin) {
       // Admin puede ver todas las instituciones
@@ -71,7 +71,7 @@ export class DashboardRepository {
   // Summary - Resumen general
   async getSummary(userId: number,role:string): Promise<any> {
     const currentYear = new Date().getFullYear();
-    const isAdmin = isAdminRole(role)
+    const isAdmin = canViewAllReports(role)
     const institutionIds = await this.getUserInstitutions(userId,role);
 
     if (institutionIds.length === 0) {
@@ -330,7 +330,7 @@ export class DashboardRepository {
   // Top Inventory Takers - Inventariadores top por cantidad este año
   async getTopInventoryTakers(userId: number,role:string): Promise<any> {
     const currentYear = new Date().getFullYear();
-    const isAdmin = isAdminRole(role)
+    const isAdmin = canViewAllReports(role)
 
     let query = "";
     let queryParams: any[] = [];
