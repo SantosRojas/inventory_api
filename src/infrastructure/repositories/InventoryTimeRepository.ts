@@ -1,8 +1,7 @@
 import mysql, { ResultSetHeader, RowDataPacket } from "mysql2/promise";
-import { InventoryTime } from "../../domain/entities/InventoryTime";
+import { InventoryTime, InventoryTimeForDB } from "../../domain/entities/InventoryTime";
 import { snackToCamel, snackToCamelArray } from "../../adapters/apiAdapter";
 import { fieldsPlaceHoldersValues, fieldsValues } from "../../utils/queriesHelper";
-import { InventoryTimePayload, InventoryTimePayloadUpdate } from "../../application/InventoryTimeService";
 
 export class InventoryTimeRepository {
     private connection: mysql.Connection;
@@ -11,7 +10,7 @@ export class InventoryTimeRepository {
         this.connection = connection;
     }
 
-    async createInventoryTime(inventoryTime: Omit<InventoryTimePayload, 'id'>): Promise<number> {
+    async createInventoryTime(inventoryTime: Omit<InventoryTime, 'id'>): Promise<number> {
         const { fields, placeholders, values } = fieldsPlaceHoldersValues(inventoryTime);
         const [result] = await this.connection.execute(
             `INSERT INTO inventory_times (${fields}) VALUES (${placeholders})`,
@@ -21,19 +20,19 @@ export class InventoryTimeRepository {
         return insertResult.insertId;
     }
 
-    async getAllInventoryTimes(): Promise<InventoryTime[]> {
+    async getAllInventoryTimes(): Promise<InventoryTimeForDB[]> {
         const query = 'SELECT * FROM inventory_times';
         const [rows] = await this.connection.execute<RowDataPacket[]>(query);
-        return snackToCamelArray(rows) as InventoryTime[];
+        return snackToCamelArray(rows) as InventoryTimeForDB[];
     }
 
-    async getInventoryTimeById(id: number): Promise<InventoryTime | null> {
+    async getInventoryTimeById(id: number): Promise<InventoryTimeForDB | null> {
         const query = 'SELECT * FROM inventory_times WHERE id = ?';
         const [rows] = await this.connection.execute<RowDataPacket[]>(query, [id]);
-        return snackToCamel(rows[0]) as InventoryTime || null;
+        return snackToCamel(rows[0]) as InventoryTimeForDB || null;
     }
 
-    async updateInventoryTime(id: number, inventoryTime: Partial<Omit<InventoryTimePayloadUpdate, 'id'>>): Promise<InventoryTime | null> {
+    async updateInventoryTime(id: number, inventoryTime: Partial<Omit<InventoryTime, 'id'>>): Promise<InventoryTimeForDB | null> {
         const { fields, values } = fieldsValues(inventoryTime);
 
         values.push(id);

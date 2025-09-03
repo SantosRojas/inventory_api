@@ -1,6 +1,4 @@
 import {
-  camelToSnake,
-  snackToCamel,
   snackToCamelArray,
 } from "../../adapters/apiAdapter";
 import { User } from "../../domain/entities/User";
@@ -10,7 +8,7 @@ import {
   fieldsPlaceHoldersValues,
   fieldsValues,
 } from "../../utils/queriesHelper";
-import { HttpError } from "../../utils/ErrorHandler";
+
 
 export class UserRepository {
   private connection: mysql.Connection;

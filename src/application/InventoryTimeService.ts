@@ -1,25 +1,8 @@
-import { InventoryTime } from "../domain/entities/InventoryTime";
+import { InventoryTime, InventoryTimeForDB } from "../domain/entities/InventoryTime";
 import { InventoryTimeRepository } from "../infrastructure/repositories/InventoryTimeRepository";
 import { HttpError } from "../utils/ErrorHandler";
-import { toMySQLDate } from "../utils/toMySQLDate";
+import { toPeruDateString } from "../utils/formateDateToPeru";
 
-export interface InventoryTimePayload {
-    userId: number;
-    inventoryId: number;
-    startTime: string;
-    endTime: string;
-    durationSeconds: number;
-    success: boolean;
-}
-
-export interface InventoryTimePayloadUpdate {
-    userId: number | null;
-    inventoryId: number | null;
-    startTime: string | null;
-    endTime: string | null;
-    durationSeconds: number | null;
-    success: boolean | null;
-}
 
 export class InventoryTimeService {
     private repository: InventoryTimeRepository;
@@ -30,15 +13,7 @@ export class InventoryTimeService {
 
     async createInventoryTime(data: InventoryTime): Promise<number> {
         try {
-            const payload: InventoryTimePayload = {
-                userId: data.userId,
-                inventoryId: data.inventoryId,
-                startTime: toMySQLDate(data.startTime),
-                endTime: toMySQLDate(data.endTime),
-                durationSeconds: data.durationSeconds,
-                success: data.success,
-            };
-            const newInventoryTime = await this.repository.createInventoryTime(payload);
+            const newInventoryTime = await this.repository.createInventoryTime(data);
             return newInventoryTime;
         } catch (error) {
             throw new HttpError(
@@ -51,8 +26,14 @@ export class InventoryTimeService {
 
     async getAllInventoryTimes(): Promise<InventoryTime[]> {
         try {
-            const inventoryTimes = await this.repository.getAllInventoryTimes();
+            const results = await this.repository.getAllInventoryTimes();
+            const inventoryTimes = results.map((inventoryTime) => ({
+                ...inventoryTime,
+                startTime: toPeruDateString(inventoryTime.startTime),
+                endTime: toPeruDateString(inventoryTime.endTime)
+            }))
             return inventoryTimes;
+
         } catch (error) {
             throw new HttpError(
                 "Error interno del servidor",
@@ -71,7 +52,11 @@ export class InventoryTimeService {
                     404,
                 );
             }
-            return inventoryTime;
+            return {
+                ...inventoryTime,
+                startTime: toPeruDateString(inventoryTime.startTime),
+                endTime: toPeruDateString(inventoryTime.endTime)
+            };
         } catch (error) {
             throw new HttpError(
                 "Error interno del servidor",
@@ -83,15 +68,7 @@ export class InventoryTimeService {
 
     async updateInventoryTime(id: number, data: Partial<Omit<InventoryTime, "id">>): Promise<InventoryTime | null> {
         try {
-            const payload: InventoryTimePayloadUpdate = {
-                userId: data.userId || null,
-                inventoryId: data.inventoryId || null,
-                startTime: toMySQLDate(data.startTime || new Date()) || null,
-                endTime: toMySQLDate(data.endTime || new Date()) || null,
-                durationSeconds: data.durationSeconds || null,
-                success: data.success || null,
-            };
-            const updatedInventoryTime = await this.repository.updateInventoryTime(id, payload);
+            const updatedInventoryTime = await this.repository.updateInventoryTime(id, data);
             if (!updatedInventoryTime) {
                 throw new HttpError(
                     "No se encontró el tiempo de inventario",
@@ -99,7 +76,11 @@ export class InventoryTimeService {
                     `No se encontró un tiempo de inventario con el ID ${id}`,
                 );
             }
-            return updatedInventoryTime;
+            return {
+                ...updatedInventoryTime,
+                startTime: toPeruDateString(updatedInventoryTime.startTime),
+                endTime: toPeruDateString(updatedInventoryTime.endTime)
+            };;
         } catch (error) {
             throw new HttpError(
                 "Error interno del servidor",
