@@ -25,45 +25,36 @@ export class InventoryTimeService {
     }
 
     async getAllInventoryTimes(): Promise<InventoryTime[]> {
-        try {
-            const results = await this.repository.getAllInventoryTimes();
-            const inventoryTimes = results.map((inventoryTime) => ({
-                ...inventoryTime,
-                startTime: toPeruDateString(inventoryTime.startTime),
-                endTime: toPeruDateString(inventoryTime.endTime)
-            }))
-            return inventoryTimes;
-
-        } catch (error) {
+        const results = await this.repository.getAllInventoryTimes();
+        if (results.length === 0) {
             throw new HttpError(
-                "Error interno del servidor",
-                500,
-                (error as Error).message,
+                "Tiempos de Inventario esta vacio",
+                404,
+                `No se encontró ningun ningun tiempo de inventario`,
             );
         }
+        const inventoryTimes = results.map((inventoryTime) => ({
+            ...inventoryTime,
+            startTime: toPeruDateString(inventoryTime.startTime),
+            endTime: toPeruDateString(inventoryTime.endTime)
+        }))
+        return inventoryTimes;
     }
 
     async getInventoryTimeById(id: number): Promise<InventoryTime | null> {
-        try {
-            const inventoryTime = await this.repository.getInventoryTimeById(id);
-            if (!inventoryTime) {
-                throw new HttpError(
-                    `No se encontró un tiempo de inventario con el ID ${id}`,
-                    404,
-                );
-            }
-            return {
-                ...inventoryTime,
-                startTime: toPeruDateString(inventoryTime.startTime),
-                endTime: toPeruDateString(inventoryTime.endTime)
-            };
-        } catch (error) {
+        const inventoryTime = await this.repository.getInventoryTimeById(id);
+        if (!inventoryTime) {
             throw new HttpError(
-                "Error interno del servidor",
-                500,
-                (error as Error).message,
+                'Tiempo de inventario no encontrado',
+                404,
+                `No se encontró un tiempo de inventario con el ID ${id}`,
             );
         }
+        return {
+            ...inventoryTime,
+            startTime: toPeruDateString(inventoryTime.startTime),
+            endTime: toPeruDateString(inventoryTime.endTime)
+        };
     }
 
     async updateInventoryTime(id: number, data: Partial<Omit<InventoryTime, "id">>): Promise<InventoryTime | null> {

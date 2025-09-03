@@ -12,7 +12,7 @@ const router = Router();
 const inventoryTimeSchema = Joi.object(
     {
         userId: Joi.number().required(),
-        inventoryId: Joi.number().required(),
+        inventoryId: Joi.number().optional().allow(null),
         startTime: Joi.date().required(),
         endTime: Joi.date().required(),
         durationSeconds: Joi.number().required(),

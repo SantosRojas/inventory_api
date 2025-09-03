@@ -23,13 +23,24 @@ export class InventoryTimeRepository {
     async getAllInventoryTimes(): Promise<InventoryTimeForDB[]> {
         const query = 'SELECT * FROM inventory_times';
         const [rows] = await this.connection.execute<RowDataPacket[]>(query);
+
+        if (!rows || rows.length === 0) {
+            return [];
+        }
+
         return snackToCamelArray(rows) as InventoryTimeForDB[];
     }
 
     async getInventoryTimeById(id: number): Promise<InventoryTimeForDB | null> {
         const query = 'SELECT * FROM inventory_times WHERE id = ?';
         const [rows] = await this.connection.execute<RowDataPacket[]>(query, [id]);
-        return snackToCamel(rows[0]) as InventoryTimeForDB || null;
+
+        if (!rows || rows.length === 0) {
+            return null;
+        }
+
+        return snackToCamel(rows[0]) as InventoryTimeForDB
+
     }
 
     async updateInventoryTime(id: number, inventoryTime: Partial<Omit<InventoryTime, 'id'>>): Promise<InventoryTimeForDB | null> {
