@@ -1,12 +1,3 @@
-export interface InventoryTimeForDB {
-  id: string;
-  userId: number;
-  inventoryId: number;
-  startTime: Date;
-  endTime: Date;
-  durationSeconds: number;
-  success: boolean;
-}
 
 export interface InventoryTime {
   id: string;

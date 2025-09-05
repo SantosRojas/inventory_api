@@ -1,5 +1,5 @@
 import mysql, { ResultSetHeader, RowDataPacket } from "mysql2/promise";
-import { InventoryTime, InventoryTimeForDB } from "../../domain/entities/InventoryTime";
+import { InventoryTime } from "../../domain/entities/InventoryTime";
 import { snackToCamel, snackToCamelArray } from "../../adapters/apiAdapter";
 import { fieldsPlaceHoldersValues, fieldsValues } from "../../utils/queriesHelper";
 
@@ -20,7 +20,7 @@ export class InventoryTimeRepository {
         return insertResult.insertId;
     }
 
-    async getAllInventoryTimes(): Promise<InventoryTimeForDB[]> {
+    async getAllInventoryTimes(): Promise<InventoryTime[]> {
         const query = 'SELECT * FROM inventory_times';
         const [rows] = await this.connection.execute<RowDataPacket[]>(query);
 
@@ -28,10 +28,10 @@ export class InventoryTimeRepository {
             return [];
         }
 
-        return snackToCamelArray(rows) as InventoryTimeForDB[];
+        return snackToCamelArray(rows) as InventoryTime[];
     }
 
-    async getInventoryTimeById(id: number): Promise<InventoryTimeForDB | null> {
+    async getInventoryTimeById(id: number): Promise<InventoryTime | null> {
         const query = 'SELECT * FROM inventory_times WHERE id = ?';
         const [rows] = await this.connection.execute<RowDataPacket[]>(query, [id]);
 
@@ -39,11 +39,11 @@ export class InventoryTimeRepository {
             return null;
         }
 
-        return snackToCamel(rows[0]) as InventoryTimeForDB
+        return snackToCamel(rows[0]) as InventoryTime
 
     }
 
-    async updateInventoryTime(id: number, inventoryTime: Partial<Omit<InventoryTime, 'id'>>): Promise<InventoryTimeForDB | null> {
+    async updateInventoryTime(id: number, inventoryTime: Partial<Omit<InventoryTime, 'id'>>): Promise<InventoryTime | null> {
         const { fields, values } = fieldsValues(inventoryTime);
 
         values.push(id);

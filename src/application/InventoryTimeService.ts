@@ -1,7 +1,7 @@
-import { InventoryTime, InventoryTimeForDB } from "../domain/entities/InventoryTime";
+import { InventoryTime } from "../domain/entities/InventoryTime";
 import { InventoryTimeRepository } from "../infrastructure/repositories/InventoryTimeRepository";
 import { HttpError } from "../utils/ErrorHandler";
-import { toPeruDateString } from "../utils/formateDateToPeru";
+import { formateDate } from "../utils/formateDate";
 
 
 export class InventoryTimeService {
@@ -35,8 +35,8 @@ export class InventoryTimeService {
         }
         const inventoryTimes = results.map((inventoryTime) => ({
             ...inventoryTime,
-            startTime: toPeruDateString(inventoryTime.startTime),
-            endTime: toPeruDateString(inventoryTime.endTime)
+            startTime: formateDate(inventoryTime.startTime),
+            endTime: formateDate(inventoryTime.endTime)
         }))
         return inventoryTimes;
     }
@@ -52,8 +52,8 @@ export class InventoryTimeService {
         }
         return {
             ...inventoryTime,
-            startTime: toPeruDateString(inventoryTime.startTime),
-            endTime: toPeruDateString(inventoryTime.endTime)
+            startTime: formateDate(inventoryTime.startTime),
+            endTime: formateDate(inventoryTime.endTime)
         };
     }
 
@@ -69,8 +69,8 @@ export class InventoryTimeService {
             }
             return {
                 ...updatedInventoryTime,
-                startTime: toPeruDateString(updatedInventoryTime.startTime),
-                endTime: toPeruDateString(updatedInventoryTime.endTime)
+                startTime: formateDate(updatedInventoryTime.startTime),
+                endTime: formateDate(updatedInventoryTime.endTime)
             };;
         } catch (error) {
             throw new HttpError(
