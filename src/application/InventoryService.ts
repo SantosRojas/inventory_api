@@ -53,6 +53,18 @@ export class InventoryService {
     return inventory;
   }
 
+  async getInventoriesByQrCodes(qrCodes: string[]): Promise<InventoryToSend[]> {
+    const inventories = await this.repository.getByQrCodes(qrCodes);
+    if (inventories.length === 0) {
+      throw new HttpError(
+        `No se encontró inventario para los códigos QR proporcionados`,
+        404,
+        `No se encontró inventario para los códigos QR proporcionados`,
+      );
+    }
+    return inventories;
+  }
+
   async getInventoriesByModelId(modelId: number): Promise<InventoryToSend[]> {
     const inventories = await this.repository.findByModelId(modelId);
     if (inventories.length === 0) {

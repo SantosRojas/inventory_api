@@ -93,6 +93,14 @@ export class InventoryRepository {
     return result || null;
   }
 
+  async getByQrCodes(qrCodes: string[]): Promise<InventoryToSend[]> {
+    if (qrCodes.length === 0) {
+      return [];
+    }
+    const placeholders = qrCodes.map(() => "?").join(", ");
+    return this.fetchWithJoins(`i.qr_code IN (${placeholders})`, qrCodes);
+  }
+
   async findByModelId(modelId: number): Promise<InventoryToSend[]> {
     return this.fetchWithJoins("i.model_id = ?", [modelId]);
   }

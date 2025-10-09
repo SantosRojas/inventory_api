@@ -1,4 +1,4 @@
-import { Router, Response } from "express";
+import { Router, Response, Request } from "express";
 import { InventoryRepository } from "../../infrastructure/repositories/InventoryRepository";
 import { InventoryService } from "../../application/InventoryService";
 import Joi from "joi";
@@ -113,6 +113,26 @@ router.get("/qr/:qrCode", authMiddleware, async (req: AuthenticatedRequest, res:
     async (service) => {
       const item = await service.getInventoryByQrCode(req.params.qrCode);
       return item;
+    },
+    res,
+  );
+});
+
+// Ruta para buscar inventarios por varios QR codes
+router.post("/qrs", async (req: Request, res: Response) => {
+  const { qrCodes } = req.body;
+
+  if (!Array.isArray(qrCodes)) {
+    res.status(400).json({ error: "Se requiere un array de códigos QR en el cuerpo de la solicitud" });
+    return;
+  }
+
+  await handleRequestWithService(
+    InventoryRepository,
+    InventoryService,
+    async (service) => {
+      const items = await service.getInventoriesByQrCodes(qrCodes);
+      return items;
     },
     res,
   );
