@@ -1,4 +1,4 @@
-import { Router, Response, Request } from "express";
+import { Router, Response } from "express";
 import { InventoryRepository } from "../../infrastructure/repositories/InventoryRepository";
 import { InventoryService } from "../../application/InventoryService";
 import Joi from "joi";
@@ -119,7 +119,7 @@ router.get("/qr/:qrCode", authMiddleware, async (req: AuthenticatedRequest, res:
 });
 
 // Ruta para buscar inventarios por varios QR codes
-router.post("/qrs", async (req: Request, res: Response) => {
+router.post("/qrs", authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { qrCodes } = req.body;
 
   if (!Array.isArray(qrCodes)) {

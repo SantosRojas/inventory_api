@@ -1,4 +1,4 @@
-import { Request, Response, Router } from "express";
+import { Response, Router } from "express";
 import Joi from "joi";
 import { errorResponse } from "../../utils/responseHelpers";
 import { InventoryTimeRepository } from "../../infrastructure/repositories/InventoryTimeRepository";
@@ -6,6 +6,7 @@ import { handleRequestWithService } from "../../utils/handleRequestWithService";
 import { InventoryTimeService } from "../../application/InventoryTimeService";
 import { isValidPositiveInteger } from "../../utils/validHandler";
 import { HttpError } from "../../utils/ErrorHandler";
+import { AuthenticatedRequest, authMiddleware } from "./middlewares/authMiddleware";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ const inventoryTimePatchSchema = inventoryTimeSchema.fork(
 );
 
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     const { error } = inventoryTimeSchema.validate(req.body);
     if (error) {
         res
@@ -53,7 +54,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     await handleRequestWithService(
         InventoryTimeRepository,
         InventoryTimeService,
@@ -66,7 +67,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     const { id: idParam } = req.params;
     if (!isValidPositiveInteger(idParam)) {
         res
@@ -94,7 +95,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-router.patch('/:id', async (req: Request, res: Response) => {
+router.patch('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     const dataBody = req.body;
     // Validación: Asegurar que al menos haya algún dato para actualizar
     if (Object.keys(dataBody).length === 0) {
@@ -136,7 +137,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
     );
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     const { id: idParam } = req.params;
     if (!isValidPositiveInteger(idParam)) {
         res
