@@ -3,7 +3,7 @@ import { InstitutionRepository } from "../../infrastructure/repositories/Institu
 import { InstitutionService } from "../../application/InstitutionService";
 import { AuthenticatedRequest, authMiddleware } from "./middlewares/authMiddleware";
 import Joi from "joi";
-import { Request, Response } from "express";
+import { Response } from "express";
 import { errorResponse } from "../../utils/responseHelpers";
 import { handleRequestWithService } from "../../utils/handleRequestWithService";
 import { isValidPositiveInteger } from "../../utils/validHandler";
